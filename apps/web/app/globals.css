@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design tokens — dark mode is the default and only mode for v1 (matches the
+  Linear/Raycast/Vercel reference points in the brief; a light theme is a
+  cheap addition later since everything routes through these variables).
+
+  Palette rationale: a near-black blue-charcoal base (not pure black — pure
+  black reads as an unstyled default) with a single indigo-violet accent.
+  The accent is reused as the pipeline "active" color and intensifies
+  (idle → active → active-deep → success) as a job moves through the
+  pipeline — this is the app's signature idea: color as information, not
+  decoration, because the underlying data genuinely is an ordered sequence.
+*/
+:root {
+  --background: 220 14% 6%;        /* #0B0D10 */
+  --surface: 220 13% 9%;           /* #14171C */
+  --surface-hover: 220 12% 12%;    /* #1B1F26 */
+  --border: 220 10% 16%;           /* #262B33 */
+  --foreground: 220 20% 94%;       /* #EDEEF1 */
+  --muted: 220 13% 9%;
+  --muted-foreground: 220 9% 58%;  /* #8B92A3 */
+
+  --primary: 249 100% 71%;         /* #7C6CFF indigo-violet */
+  --primary-foreground: 220 20% 98%;
+  --ring: 249 100% 71%;
+  --destructive: 0 79% 63%;        /* #EF4444 */
+
+  /* Pipeline stage intensity scale */
+  --stage-idle: 220 9% 40%;        /* wishlist — dim gray, not yet in motion */
+  --stage-active: 249 70% 65%;     /* applied / OA — entering the funnel */
+  --stage-active-deep: 258 90% 75%;/* interview rounds — deepening violet */
+  --stage-success: 158 64% 52%;    /* offer / accepted — #34D399 */
+  --stage-danger: 0 79% 63%;       /* rejected — same as destructive */
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Tabular figures for anything numeric — salary ranges, dates, counts —
+   so columns of numbers actually align. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background-color: hsl(var(--primary) / 0.3);
+}
+
+/* Visible keyboard focus everywhere, never suppressed */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

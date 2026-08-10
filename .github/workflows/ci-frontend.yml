@@ -1,0 +1,47 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/web/**", ".github/workflows/ci-frontend.yml"]
+  pull_request:
+    paths: ["apps/web/**", ".github/workflows/ci-frontend.yml"]
+
+defaults:
+  run:
+    working-directory: apps/web
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: "npm", cache-dependency-path: apps/web/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: "npm", cache-dependency-path: apps/web/package-lock.json }
+      - run: npm ci
+      - run: npm run build
+        env:
+          # A placeholder is fine for a CI build check — the real value is
+          # injected at deploy time (see Vercel project settings / Dockerfile
+          # build args). This just proves the build succeeds.
+          NEXT_PUBLIC_API_URL: https://api.placeholder.invalid/api/v1
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: "npm", cache-dependency-path: apps/web/package-lock.json }
+      - run: npm ci
+      - run: npm audit --audit-level=high || echo "::warning::npm audit found issues — review before merging"

@@ -1,0 +1,54 @@
+name: Deploy
+
+# Runs after both CI workflows succeed on main. Requires repository secrets:
+#   RENDER_DEPLOY_HOOK_URL   - from Render dashboard: Service -> Settings -> Deploy Hook
+#   VERCEL_TOKEN             - from vercel.com/account/tokens
+#   VERCEL_ORG_ID            - from apps/web/.vercel/project.json after `vercel link`
+#   VERCEL_PROJECT_ID        - from apps/web/.vercel/project.json after `vercel link`
+#
+# This workflow is a template — it hasn't been run against real Render/Vercel
+# accounts in this environment (no credentials available here). Review the
+# exact CLI flags against current Vercel CLI docs before relying on it.
+
+on:
+  workflow_run:
+    workflows: ["Backend CI", "Frontend CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy-api:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK_URL secret not set — skipping API deploy"
+            exit 0
+          fi
+          curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+  deploy-web:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Deploy to Vercel
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "::warning::VERCEL_TOKEN secret not set — skipping web deploy"
+            exit 0
+          fi
+          npm install -g vercel
+          vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+          vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+          vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

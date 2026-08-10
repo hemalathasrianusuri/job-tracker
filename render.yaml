@@ -1,0 +1,54 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Deploys the API only. Postgres and file storage are Supabase (per Phase 1's
+# tech decisions), and Redis can be Render's managed Redis (uncomment below)
+# or an external provider like Upstash. The frontend deploys separately to
+# Vercel — see vercel.json and the README's deployment section.
+#
+# Usage: connect this repo in the Render dashboard and it will read this file
+# automatically ("New +" -> "Blueprint"), or run `render blueprint launch`.
+
+services:
+  - type: web
+    name: job-tracker-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # set manually to your Supabase connection string (postgresql+asyncpg://...)
+      - key: REDIS_URL
+        sync: false # set manually — Render managed Redis, Upstash, etc.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: resumes
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: https://job-tracker-api.onrender.com/api/v1/auth/google/callback
+      - key: FRONTEND_URL
+        sync: false # set to your deployed Vercel URL once known
+
+# Uncomment to use Render's managed Redis instead of an external provider —
+# then point REDIS_URL above at `fromService` this instance instead of `sync: false`.
+# - type: redis
+#   name: job-tracker-redis
+#   plan: starter
+#   ipAllowList: []

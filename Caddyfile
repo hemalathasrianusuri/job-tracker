@@ -1,0 +1,11 @@
+# Replace with your real domain — Caddy provisions and renews TLS certs
+# automatically via Let's Encrypt for any domain you put here.
+your-domain.example.com {
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+
+    handle {
+        reverse_proxy web:3000
+    }
+}

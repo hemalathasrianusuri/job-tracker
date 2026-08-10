@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: job-tracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: job_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - job_tracker_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: job-tracker-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Optional: the async resume-processing pipeline (Phase 8). Off by default —
+  # `docker compose up` does NOT start these. Enable with:
+  #   docker compose --profile async up -d
+  # and set ENABLE_ASYNC_RESUME_PROCESSING=true in apps/api/.env.
+  worker:
+    profiles: ["async"]
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: job-tracker-worker
+    command: celery -A app.workers.celery_app worker --loglevel=info
+    env_file: ./apps/api/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/job_tracker
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  flower:
+    profiles: ["async"]
+    image: mher/flower:2.0
+    container_name: job-tracker-flower
+    command: celery flower --broker=redis://redis:6379/0 --port=5555
+    ports:
+      - "5555:5555"
+    depends_on: [redis, worker]
+
+volumes:
+  job_tracker_postgres_data:
