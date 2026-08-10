@@ -1,6 +1,6 @@
 -r requirements.txt
 
-pytest==8.3.3
-pytest-asyncio==0.24.0
-ruff==0.6.9
-pip-audit==2.7.3
+pytest==9.1.1
+pytest-asyncio==1.4.0
+ruff==0.16.1
+pip-audit==2.10.1
