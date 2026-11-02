@@ -1,5 +1,5 @@
 # --- Builder stage: compile wheels, keep build tools out of the final image ---
-FROM python:3.12-slim AS builder
+FROM python:3.15-slim AS builder
 
 WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev && rm -rf /var/lib/apt/lists/*
@@ -8,7 +8,7 @@ COPY requirements.txt .
 RUN pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
 
 # --- Runtime stage ---
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 # libpq5 (not -dev) is enough at runtime for psycopg2; gcc/headers stay in the builder stage
 RUN apt-get update && apt-get install -y --no-install-recommends libpq5 curl \
